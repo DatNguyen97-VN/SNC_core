@@ -1,11 +1,11 @@
 # The Synchronus FIFO Module
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
-   * [I/O Ports](#I/O-Ports)
+   * [I/O Ports](#IO-Ports)
 2. [Theory of Operation](#2-Theory-of-Operation)
 3. [Timing Chart](#3-Timing-Chart)
 4. [FIFO Verification](#4-FIFO-Verification)
-5. [References](#4-References)
+5. [References](#5-References)
 
 ## 1. Overview
 ![fifo overview](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/syn_fifo.png)
@@ -20,7 +20,7 @@ The FIFO has normal input-bus to output-bus asynchronous operation.
 - [x] Expandable in Word Width and/or Word Entries
 - [X] Fifo-Full and Fifo-Empty Flags are Multilevel-Synchronized
 
-### I/O Ports
+### IO Ports
 
 | PORTNAME     | I/O    |   BIT WIDTH   | DESCRIPTION |
 |--------------|--------|:-------------:|-------------|
