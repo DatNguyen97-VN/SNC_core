@@ -113,14 +113,11 @@ module syn_fifo #(
   // Multilevel synchronization for full signal
   always_ff @( posedge clk_wr_i or posedge fifo_full ) begin : multilevel_full_syn
     if (!rst_n_i) begin
-      full_syn_stage1 <= 1'b0;
-      full_syn_stage2 <= full_syn_stage1;
+      {full_syn_stage2, full_syn_stage1} <= {full_syn_stage1, 1'b0};
     end else if (fifo_full) begin
-      full_syn_stage1 <= 1'b0;
-      full_syn_stage2 <= 1'b0;
+      {full_syn_stage2, full_syn_stage1} <= 2'b00;
     end else begin
-      full_syn_stage1 <= 1'b1;
-      full_syn_stage2 <= full_syn_stage1;
+      {full_syn_stage2, full_syn_stage1} <= {full_syn_stage1, 1'b1};
     end
   end : multilevel_full_syn
 
@@ -140,17 +137,11 @@ module syn_fifo #(
   // Multilevel synchronization for empty signal
   always_ff @( posedge clk_rd_i or posedge fifo_empty) begin : multilevel_empty_syn
     if (!rst_n_i) begin
-      empty_syn_stage1 <= 1'b0;
-      empty_syn_stage2 <= empty_syn_stage1;
-      empty_syn_stage3 <= empty_syn_stage2;
+      {empty_syn_stage3, empty_syn_stage2, empty_syn_stage1} <= {empty_syn_stage2, empty_syn_stage1, 1'b0};
     end else if (fifo_empty) begin
-      empty_syn_stage1 <= 1'b0;
-      empty_syn_stage2 <= 1'b0;
-      empty_syn_stage3 <= 1'b0;
+      {empty_syn_stage3, empty_syn_stage2, empty_syn_stage1} <= 3'b000;
     end else begin
-      empty_syn_stage1 <= 1'b1;
-      empty_syn_stage2 <= empty_syn_stage1;
-      empty_syn_stage3 <= empty_syn_stage2;
+      {empty_syn_stage3, empty_syn_stage2, empty_syn_stage1} <= {empty_syn_stage2, empty_syn_stage1, 1'b1};
     end
   end : multilevel_empty_syn
 
