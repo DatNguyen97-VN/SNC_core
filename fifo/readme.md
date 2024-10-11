@@ -1,16 +1,17 @@
-# The Synchronus FIFO Module
+# The Synchronous FIFO Module
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
    * [I/O Ports](#IO-Ports)
 2. [Theory of Operation](#2-Theory-of-Operation)
 3. [Timing Chart](#3-Timing-Chart)
 4. [FIFO Verification](#4-FIFO-Verification)
-5. [References](#5-References)
+5. [Getting Started](#5-Getting-Started)
+6. [References](#6-References)
 
 ## 1. Overview
 ![fifo overview](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/syn_fifo.png)
 
-A synchronus FIFO memory is a storage device that allows data to be written into and read from its array at independent data rates. It is organized as `<FIFO_ENTRIES> × <DATA_WIDTH>` bits. Expansion is accomplished easily in both word width and word entries.
+A synchronous FIFO memory is a storage device that allows data to be written into and read from its array at independent data rates. It is organized as `<FIFO_ENTRIES> × <DATA_WIDTH>` bits. Expansion is accomplished easily in both word width and word entries.
 The FIFO has normal input-bus to output-bus asynchronous operation. 
 ### Key Features
 
@@ -52,7 +53,7 @@ The data_out_o is in the high-impedance state when oe_i is low. It must be high 
 
 **Half-Full-Flag** is high when the FIFO contains half or more words and is low when the number of words in memory is less than half the entries of the FIFO.
 
-> [!NOTE]
+> [!IMPORTANT]  
 > `Full/Empty-Flag is low at this time then is disable-write/read data. All them go through multilevel synchronization when the flags are reset
 and are set without a delay because the status outputs are triggered by a synchronous signal.`
 
@@ -104,10 +105,19 @@ Transition Word with `FIFO_ENTRIES` is 1024
 | A    |   B  |   C  |  D   | E    |  F   |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | W512 | W514 |  W(1024-X) | W(1025-X) | W1023 | W1024 |
-## 4. FIFO Verification
+## 4. FIFO Verification  :mag_right:
+Currently, the following test types are supported:  
+- [x] Register  
+- [x] Function  
+- [X] Corner Case  
+- [X] Reset  
 
-## 5. References  
+> [!TIP]
+> The detail of testcases for verificaton are available in [syn_fifo_checkpoint.xlsx](figures/syn_fifo_checkpoint.xlsx)  
 
-1. Synchronus FIFO, https://nguyenquanicd.blogspot.com/2017/08/ip-core-fifo-ong-bo-co-cau-hinh-uoc.html  
+## 5. Getting Started  
+## 6. References  
+
+1. Synchronous FIFO, https://nguyenquanicd.blogspot.com/2017/08/ip-core-fifo-ong-bo-co-cau-hinh-uoc.html  
 2. Texas Instruments's SN74ACT7881  
 3. FIFO Architecture, Functions, and Applications from Texas Instruments  

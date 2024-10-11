@@ -15,17 +15,17 @@
 // Revision:
 //          0.1.0   - Oct 3rd 2024
 //                  + Initial version.
-//                  + added multilevel synchronus for a fifo_full/fifo_empty signal
+//                  + added multilevel synchronous for a fifo_full/fifo_empty signal
 //          0.2.0   - Oct 5th 2024
 //                  + added pre-validation for FIFO_ENTRIES parameter
 //                  + implemented Half-full and Almost-full/almost-empty flag
 //          0.2.1   - Oct 6th 2024
 //                  + additionally implement the fifo_full/fifo_empty status output is triggered by a synchronous signal
 //                  + Modified Half-full flag
-//          0.3.0   - Oct 7th 2024
+//          0.3.0   - Oct 8th 2024
 //                  + additionally implement the data output with latch
 //                  + Freezing Version
-//          1.0.0   - Oct 10th 2024
+//          1.0.0   - Oct 11th 2024
 //                  + Released Version
 // Additional Comments:
 // 

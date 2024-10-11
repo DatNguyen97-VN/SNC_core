@@ -8,7 +8,7 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: check function of Synchronus FIFO.
+// Description: check function of Synchronous FIFO.
 // 
 // Dependencies: 
 // 
