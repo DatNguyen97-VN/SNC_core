@@ -91,9 +91,9 @@ To redefine AF/AE using the default value of X = FIFO_ENTRIES/4, hold daf_i high
 
 Transition Word with `FIFO_ENTRIES` is 1024
 
-| A    |      B     |      C    |
+| A    |  B   |  C  |
 | :--- | :--- | :---|
-| W513 | W(1024-X) |  W1024 | 
+| W512 | W(1024-X) |  W1024 | 
 
 
 **Read Data**
@@ -103,7 +103,7 @@ Transition Word with `FIFO_ENTRIES` is 1024
 
 | A    |   B  |   C  |  D   | E    |  F   |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| W513 | W514 |  W(1024-X) | W(1025-X) | W1023 | W1024 |
+| W512 | W514 |  W(1024-X) | W(1025-X) | W1023 | W1024 |
 ## 4. FIFO Verification
 
 ## 5. References  
