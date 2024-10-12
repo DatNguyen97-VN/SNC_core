@@ -106,6 +106,8 @@ Transition Word with `FIFO_ENTRIES` is 1024
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | W512 | W514 |  W(1024-X) | W(1025-X) | W1023 | W1024 |
 ## 4. FIFO Verification  :mag_right:
+### Testbench Architecture   
+### Overall Strategy of Verification  
 Currently, the following test types are supported:  
 - [x] Register  
 - [x] Function  
