@@ -23,15 +23,6 @@ module system_signals (
     output logic sys_rclk,
     output logic sys_wclk
 );
-    // Reset signal generation
-    initial begin
-        sys_rst = 1'b1;
-        #157
-        sys_rst = 1'b0;
-        #140
-        sys_rst = 1'b1;
-    end
-
     // Write clock generation
     initial begin
         sys_wclk = 1'b0;
