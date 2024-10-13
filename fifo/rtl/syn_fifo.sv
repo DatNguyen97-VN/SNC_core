@@ -25,7 +25,7 @@
 //          0.3.0   - Oct 8th 2024
 //                  + additionally implement the data output with latch
 //                  + Freezing Version
-//          1.0.0   - Oct 11th 2024
+//          1.0.0   - Oct 13th 2024
 //                  + Released Version
 // Additional Comments:
 // 
