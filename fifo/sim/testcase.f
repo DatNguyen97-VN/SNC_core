@@ -5,3 +5,8 @@
 ../tests/syn_fifo_tc_05.sv
 ../tests/syn_fifo_tc_06.sv
 ../tests/syn_fifo_tc_07.sv
+../tests/syn_fifo_tc_08.sv
+../tests/syn_fifo_tc_09.sv
+../tests/syn_fifo_tc_10.sv
+../tests/syn_fifo_tc_11.sv
+../tests/syn_fifo_tc_12.sv

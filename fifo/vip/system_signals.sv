@@ -35,7 +35,7 @@ module system_signals (
     // Read clock generation
     initial begin
         sys_rclk = 1'b0;
-        #13;
+        #13; // modify to #10 when run tc_12 testcase
         forever begin
             #10 sys_rclk = ~sys_rclk;
         end

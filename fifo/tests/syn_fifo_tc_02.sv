@@ -93,14 +93,7 @@ module syn_fifo_tc_02;
                 break;
             end
         end
-        //
         
-        // reset
-        tb.cpu.reset();
-        #1;
-        repeat (3) @(posedge tb.sys_rclk);
-        // testcase of simultaneously write/read data
-        tb.cpu.title("Simultaneously Write/Read Data");
         // check pass/fail
         tb.cpu.check_by_pass(err_flag);
         #10 $finish;

@@ -46,7 +46,7 @@ clean:
 		rm -rf *.ucdb
 		rm -rf vsim.*
 
-run_gov:
+run_gov: clean build
 		vsim.exe -c -coverage -l  ${TESTNAME}.log work.${TESTNAME} -voptargs="+cover=bcefsx" -do "coverage save -onexit ${TESTNAME}.ucdb; run -all; exit" -sv_seed ${SEED}
 		mv ${TESTNAME}.log ./log
 		ln -sf ./log/${TESTNAME}.log sim.log
@@ -57,5 +57,20 @@ gen_cov:
 		vcover.exe report IP.ucdb -file coverage/summary_report.txt
 		vcover.exe report -zeros -detail -code bcefsx -All -codeAll IP.ucdb -file coverage/detail_report.txt
 		
+run_all:
+		make run_gov TESTNAME=syn_fifo_tc_01
+		make run_gov TESTNAME=syn_fifo_tc_02
+		make run_gov TESTNAME=syn_fifo_tc_03
+		make run_gov TESTNAME=syn_fifo_tc_04
+		make run_gov TESTNAME=syn_fifo_tc_05
+		make run_gov TESTNAME=syn_fifo_tc_06
+		make run_gov TESTNAME=syn_fifo_tc_07
+		make run_gov TESTNAME=syn_fifo_tc_08
+		make run_gov TESTNAME=syn_fifo_tc_09
+		make run_gov TESTNAME=syn_fifo_tc_10
+		make run_gov TESTNAME=syn_fifo_tc_11
+		make run_gov TESTNAME=syn_fifo_tc_12
+		make gen_cov
+
 #===========================================================
 #===========================================================

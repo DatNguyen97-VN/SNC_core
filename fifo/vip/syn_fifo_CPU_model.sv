@@ -57,7 +57,8 @@ module fifo_CPU_model #(
         data_in_o = data;
         @(posedge clk_wr_i);
         index = tb.dut.w_pointer;
-        if (wr_o) $display(" %07tns Start write data: %04h into FIFO entrie: %0d", $time, data, index);
+        #1
+        $display(" %07tns Start write data: %04h into FIFO entrie: %0d", $time, data, index);
         wr_o = 0;
     end
   endtask
@@ -75,7 +76,7 @@ module fifo_CPU_model #(
       index = tb.dut.r_pointer;
       #1;
       data = data_out_i;
-      if (rd_o) $display(" %07tns Start read  data: %04h at FIFO entrie: %0d", $time, data_out_i, index);
+      $display(" %07tns Start read  data: %04h at   FIFO entrie: %0d", $time, data_out_i, index);
       rd_o = 0;
       oe_o = 0;
     end
