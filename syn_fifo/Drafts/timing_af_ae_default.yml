@@ -1,0 +1,15 @@
+{ signal: [
+  { name: "rst_n_i", wave: '1..l.........h...' },
+  { name: "daf_i", wave: 'x..........h.....' },
+  { name: "clk_wr_i", wave: 'P................' },
+  { name: "wr_i", wave: 'x............lh..' },
+  { name: "data_in_i", wave: "x................"},
+  { name: "clk_rd_i", wave: 'P................' },
+  { name: "rd_i", wave: 'x............l...' },
+  { name: "oe_i", wave: '1................' },
+  { name: "data_out_o", wave: "x................"},
+  { name: "fifo_empty_o", wave: 'x.....l..........' },
+  { name: "af_ae_o", wave: 'x..h.............' },
+  { name: "half_full_o", wave: 'x..l.............' },
+  { name: "fifo_full_o", wave: 'x....l.........h.' },
+]}
