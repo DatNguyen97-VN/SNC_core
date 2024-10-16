@@ -9,7 +9,7 @@
 6. [References](#6-References)
 
 ## 1. Overview
-![fifo overview](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/syn_fifo.png)
+![fifo overview](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/syn_fifo.png)
 
 A synchronous FIFO memory is a storage device that allows data to be written into and read from its array at independent data rates. It is organized as `<FIFO_ENTRIES> × <DATA_WIDTH>` bits. Expansion is accomplished easily in both word width and word entries.
 The FIFO has normal input-bus to output-bus asynchronous operation. 
@@ -78,17 +78,17 @@ To redefine AF/AE using the default value of X = FIFO_ENTRIES/4, hold daf_i high
 ## 3. Timing Chart  
 **Reset Cycle: Define Almost-Full/Empty Flag Using a Programmed Value of X**  
 
-![timing value](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/timing_value.png)
+![timing value](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/timing_value.png)
 
  `X*` is the binary value on `log2(FIFO_ENTRIES)-2`
 
  **Reset Cycle: Define Almost-Full/Empty Flag Using the Default Value of X**
 
- ![timing default](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/timing_default.png)
+ ![timing default](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/timing_default.png)
  
 **Write Data**
 
-![write data](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/timing_write.png)
+![write data](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/timing_write.png)
 
 
 Transition Word with `FIFO_ENTRIES` is 1024
@@ -99,7 +99,7 @@ Transition Word with `FIFO_ENTRIES` is 1024
 
 
 **Read Data**
-![Read data](https://github.com/DatNguyen97-VN/SNC_core/blob/main/fifo/doc/figures/timing_read.png)
+![Read data](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/timing_read.png)
 
 Transition Word with `FIFO_ENTRIES` is 1024
 
