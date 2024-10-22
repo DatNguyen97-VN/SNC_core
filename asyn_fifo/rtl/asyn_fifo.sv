@@ -46,6 +46,7 @@ module asyn_fifo #(
     input  logic                   oe_i,
     input  logic                   re_trans_i,
     input  logic                   big_en_i,
+    input  logic [1:0]             iw_ow_i,
     output logic                   fifo_empty_o,
     output logic                   fifo_full_o,
     output logic                   half_full_o,
@@ -91,8 +92,10 @@ module asyn_fifo #(
     logic       retrans_empty;
     logic       msb_rbin;
     // big endian/little endian
-    logic big_en_step;
-    logic big_en_offset;
+    logic       big_en_wr_step;
+    logic       big_en_rd_step;
+    logic       big_en_offset;
+    logic [1:0] iw_ow_offset;
     // Almost-full/almost-empty flag signals
     const int default_offset = FIFO_ENTRIES >> 2;
     logic [$clog2(FIFO_ENTRIES)-2:0] offset;
@@ -108,16 +111,19 @@ module asyn_fifo #(
     initial begin
     /* information about a range of X value */
       assert (0)
-      else $info("SYN FIFO CONFIG NOTE: X value of valid range [1..%0d].", FIFO_ENTRIES/2 - 1);
+      else $info("ASYN FIFO CONFIG NOTE: X value of valid range [1..%0d].", FIFO_ENTRIES/2 - 1);
     /*Check default value of Offset */
       assert (DATA_WIDTH >= ($clog2(FIFO_ENTRIES)-1))
-      else $error("Size of data_in_i in <DATA_WIDTH> should be great than or equal: %0d to represent a default value of Offset(x)", $clog2(FIFO_ENTRIES)-1);
+      else $error("ASYN FIFO CONFIG NOTE: Size of data_in_i in <DATA_WIDTH> should be great than or equal: %0d to represent a default value of Offset(x)", $clog2(FIFO_ENTRIES)-1);
     /* 2^n fifo entries check */
       if (((FIFO_ENTRIES & (FIFO_ENTRIES-1)) == 0) && (FIFO_ENTRIES >= 4)) begin
-        $info("SYN FIFO CONFIG NOTE: Number of fifo entries is %0d and data width is %0d", FIFO_ENTRIES, DATA_WIDTH);
+        $info("ASYN FIFO CONFIG NOTE: Number of fifo entries is %0d and data width is %0d", FIFO_ENTRIES, DATA_WIDTH);
       end else begin
-        $error("SYN FIFO CONFIG ERROR! Number of fifo entries in <FIFO_ENTRIES> has to be a power of two, min is 4.");
+        $error("ASYN FIFO CONFIG ERROR! Number of fifo entries in <FIFO_ENTRIES> has to be a power of two, min is 4.");
       end
+    /* DATA WIDTH should be even */
+      assert (!DATA_WIDTH[0])
+      else $error("ASYN FIFO CONFIG ERROR: Size of input data in <DATA_WIDTH> should be an even number");
     end
 
     /* ------------------------------- */
@@ -133,22 +139,20 @@ module asyn_fifo #(
     always_ff @( posedge clk_wr_i or negedge reset ) begin : write_pointer
       if (!reset) begin
         wbin <= '0;
-      end else if (big_en_offset) begin 
-        wbin <= wbin + big_en_step;
       end else if (fifo_we) begin
-        wbin <= wbin_next;
+        wbin <= (iw_ow_offset == 2'b10) ? (wbin + big_en_wr_step) : wbin_next;
       end
     end : write_pointer
 
     // increate wbin_next by 1
     assign wbin_next = wbin + 1'b1;
 
-    //
-    always_ff @( posedge clk_wr_i or negedge reset ) begin : blockName
+    // big endian write step
+    always_ff @( posedge clk_wr_i or negedge reset ) begin
       if (!reset) begin
-        big_en_step <= 0;
-      end else begin
-        big_en_step <= ~big_en_step;
+        big_en_wr_step <= 0;
+      end else if (fifo_we) begin
+        big_en_wr_step <= ~big_en_wr_step;
       end
     end
 
@@ -181,12 +185,21 @@ module asyn_fifo #(
         // set msb value into rbin at retransmission mode
         rbin <= {msb_rbin, {$bits(rbin)-1{1'b0}}};
       end else if (fifo_re) begin
-        rbin <= rbin_next;
+        rbin <= (iw_ow_offset == 2'b01) ? (rbin + big_en_rd_step) : rbin_next;
       end
     end : read_pointer
 
     // increate rbin_next by 1
     assign rbin_next = rbin + 1'b1;
+
+    // big endian read step
+    always_ff @( posedge clk_rd_i or negedge reset ) begin
+      if (!reset) begin
+        big_en_rd_step <= 0;
+      end else if (fifo_re) begin
+        big_en_rd_step <= ~big_en_rd_step;
+      end
+    end
 
     // Multilevel synchronization for read pointer
     always_ff @( posedge clk_wr_i or negedge reset) begin : rptr_syn_1
@@ -208,17 +221,40 @@ module asyn_fifo #(
     /* -------------------- */
     /* DUAL-PORT SRAM BLOCK */
     /* -------------------- */
-    always_ff @( posedge clk_wr_i ) begin : write_data
-    if (fifo_we && reset) begin
-      mem_array[wbin[$bits(wbin)-2:0]] <= data_in_i;
-    end
+    always_ff @( posedge clk_wr_i or negedge reset ) begin : write_data
+      if (!reset) begin
+        mem_array <= '{default : '0};
+      end else if (fifo_we) begin
+        // mode selection of write data
+        case ({big_en_offset, iw_ow_offset, big_en_wr_step})
+          // little endian
+          4'b0_10_0 : mem_array[wbin[$bits(wbin)-2:0]][DATA_WIDTH-1:DATA_WIDTH/2] <= data_in_i[DATA_WIDTH/2-1:0];          // LSB
+          4'b0_10_1 : mem_array[wbin[$bits(wbin)-2:0]][DATA_WIDTH/2-1:0]          <= data_in_i[DATA_WIDTH-1:DATA_WIDTH/2]; // MSB
+          // big endian
+          4'b1_10_0 : mem_array[wbin[$bits(wbin)-2:0]][DATA_WIDTH-1:DATA_WIDTH/2] <= data_in_i[DATA_WIDTH-1:DATA_WIDTH/2]; // MSB
+          4'b1_10_1 : mem_array[wbin[$bits(wbin)-2:0]][DATA_WIDTH/2-1:0]          <= data_in_i[DATA_WIDTH/2-1:0];          // LSB
+          default: begin
+                      mem_array[wbin[$bits(wbin)-2:0]] <= big_en_offset ? data_in_i : 
+                                                                         {data_in_i[DATA_WIDTH/2-1:0], data_in_i[DATA_WIDTH-1:DATA_WIDTH/2]};
+          end
+        endcase
+      end
     end : write_data
     //
     always_ff @( posedge clk_rd_i or negedge reset ) begin : read_data
       if (!reset) begin
         data_latch <= '0;
       end else if (fifo_re) begin
-        data_latch <= mem_array[rbin[$bits(rbin)-2:0]];
+        // mode selection of write data
+        case ({big_en_offset, iw_ow_offset, big_en_rd_step})
+          // MSB
+          4'b0_01_0, 4'b1_01_0 : data_latch[DATA_WIDTH/2-1:0] <= mem_array[rbin[$bits(rbin)-2:0]][DATA_WIDTH-1:DATA_WIDTH/2];
+          // LSB
+          4'b1_01_1, 4'b1_01_1 : data_latch[DATA_WIDTH/2-1:0] <= mem_array[rbin[$bits(rbin)-2:0]][DATA_WIDTH/2-1:0];
+          default: begin
+                                 data_latch                   <= mem_array[rbin[$bits(rbin)-2:0]];
+          end
+        endcase
       end
     end : read_data
 
@@ -228,6 +264,7 @@ module asyn_fifo #(
     always_ff @(negedge mrst_n_i) begin : offset_registers
       if (!mrst_n_i) begin
         big_en_offset <= big_en_i;
+        iw_ow_offset  <= iw_ow_i;
       end
     end : offset_registers
 
