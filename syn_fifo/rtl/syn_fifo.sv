@@ -163,13 +163,7 @@ module syn_fifo #(
   /* ------------------ */
   /* DATA LATCH OUTPUT  */
   /*------------------- */
-  always_latch begin
-    if (oe_i) begin
-      data_out_o = data_latch;
-    end else begin
-      data_out_o = 'z;
-    end
-  end
+  assign data_out_o = oe_i ? data_latch : 'z;
 
   /*------------------- */
   /* STATUS FLAGS LOGIC */
