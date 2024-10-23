@@ -23,13 +23,18 @@
 //          0.3.0   + Oct 21st 2024
 //                  + big endian/little endian 
 //                  + input/output width bus matching 
+//          0.3.1   + Oct 22nd 2024
+//                  + added almost empty/full-flags
+//                  + added half full flag
+//          0.4.0   + OCt 23rd 2024
+//                  + added serial/parallel programming mode 
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
 `ifndef  _INCL_DEFINITIONS
   `define _INCL_DEFINITIONS
-  // include file
+  `include "fifo_parameters.svh"
 `endif // _INCL_DEFINITIONS
 
 module asyn_fifo #(
@@ -45,12 +50,19 @@ module asyn_fifo #(
     input  logic                   daf_i,
     input  logic                   oe_i,
     input  logic                   re_trans_i,
+    input  logic                   LD_i,
+    input  logic [1:0]             FSEL_i,
     input  logic                   big_en_i,
     input  logic [1:0]             iw_ow_i,
+    input  logic                   PFM_i,
+    input  logic                   IP_i,
+    input  logic                   SEN_i,
+    input  logic                   SI_i,
     output logic                   fifo_empty_o,
     output logic                   fifo_full_o,
     output logic                   half_full_o,
-    output logic                   af_ae_o,
+    output logic                   almost_full_flag_o,
+    output logic                   almost_empty_flag_o,
     input  logic [DATA_WIDTH-1:0]  data_in_i,
     output logic [DATA_WIDTH-1:0]  data_out_o
 );
@@ -72,8 +84,6 @@ module asyn_fifo #(
     // status flag signals
     logic fifo_full;
     logic fifo_empty;
-    logic half_full;
-    logic af_ae;
     // buffer register
     logic empty_buffer1;
     logic empty_buffer2;
@@ -96,12 +106,31 @@ module asyn_fifo #(
     logic       big_en_rd_step;
     logic       big_en_offset;
     logic [1:0] iw_ow_offset;
-    // Almost-full/almost-empty flag signals
-    const int default_offset = FIFO_ENTRIES >> 2;
-    logic [$clog2(FIFO_ENTRIES)-2:0] offset;
-    logic [$clog2(FIFO_ENTRIES)-2:0] user_offset;
-    logic [$clog2(FIFO_ENTRIES):0]   data_filled_read;
-    logic [$clog2(FIFO_ENTRIES):0]   data_filled_write;
+    // Almost-full/almost-empty flag and half-full flag signals
+    logic almost_full_flag_buf1;
+    logic almost_full_flag_buf2;
+    logic asyn_almost_full_flag;
+    logic almost_empty_flag_buf1;
+    logic almost_empty_flag_buf2;
+    logic asyn_almost_empty_flag;
+    logic LD_offset;
+    logic PFM_offset;
+    logic [01:00] FSEL_offset;
+    logic [09:00] full_offset;
+    logic [09:00] empty_offset;
+    logic asyn_half_full_flag;
+    logic [$clog2(FIFO_ENTRIES):0] asyn_data_filled;
+    logic [$clog2(FIFO_ENTRIES):0] data_filled_read;
+    logic [$clog2(FIFO_ENTRIES):0] data_filled_write;
+    // interspersed parity offset
+    logic IP_offset;
+    // programming mode offsets and offset registers
+    logic SEN_offset;
+    logic [31:00] serial_load_status;
+    logic [03:00] parallel_read_status;
+    logic [15:00] empty_offset_register;
+    logic [15:00] full_offset_register;
+    logic [DATA_WIDTH-1:0] parallel_read_offset;
     // Data latch signals
     logic [DATA_WIDTH-1:0] data_latch;
 
@@ -121,7 +150,7 @@ module asyn_fifo #(
       end else begin
         $error("ASYN FIFO CONFIG ERROR! Number of fifo entries in <FIFO_ENTRIES> has to be a power of two, min is 4.");
       end
-    /* DATA WIDTH should be even */
+    /* DATA WIDTH */
       assert (!DATA_WIDTH[0])
       else $error("ASYN FIFO CONFIG ERROR: Size of input data in <DATA_WIDTH> should be an even number");
     end
@@ -134,7 +163,7 @@ module asyn_fifo #(
     /* ------------------------------- */
     /* WRITE POINTER AND CONTROL BLOCK */
     /* ------------------------------- */
-    assign fifo_we = wr_i & full_buffer2;
+    assign fifo_we = wr_i & full_buffer2 & ~LD_i;
     //
     always_ff @( posedge clk_wr_i or negedge reset ) begin : write_pointer
       if (!reset) begin
@@ -176,7 +205,7 @@ module asyn_fifo #(
     /* ------------------------------- */
     /*  READ POINTER AND CONTROL BLOCK */
     /* ------------------------------- */
-    assign fifo_re = rd_i & fifo_empty;
+    assign fifo_re = rd_i & fifo_empty & ~LD_i;
     //
     always_ff @( posedge clk_rd_i or negedge reset) begin : read_pointer
       if (!reset) begin
@@ -259,19 +288,25 @@ module asyn_fifo #(
     end : read_data
 
     /* --------------------------- */
-    /*   CONFIGURATION REGISTERS   */
+    /*       OFFSET REGISTERS      */
     /*---------------------------- */
     always_ff @(negedge mrst_n_i) begin : offset_registers
       if (!mrst_n_i) begin
         big_en_offset <= big_en_i;
         iw_ow_offset  <= iw_ow_i;
+        PFM_offset    <= PFM_i;
+        LD_offset     <= LD_i;
+        FSEL_offset   <= FSEL_i;
+        SEN_offset    <= SEN_i;
+        IP_offset     <= IP_i;
       end
     end : offset_registers
 
     /* ------------------ */
     /* DATA LATCH OUTPUT  */
     /*------------------- */
-    assign data_out_o = oe_i ? data_latch : 'z;
+    assign data_out_o = oe_i ? LD_i ? parallel_read_offset : data_latch 
+                             : 'z;
 
     /*------------------- */
     /* STATUS FLAGS LOGIC */
@@ -305,6 +340,10 @@ module asyn_fifo #(
     end : rgray2bin
     // compute data
     assign data_filled_write = wbin + ~(bin_rptr_syn2) + 1'b1;
+
+    // Calculate the asynchronous capacity of FIFO -----------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    assign asyn_data_filled = wbin + ~rbin + 1'b1;
 
     // Full/Empty-Signals ------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------
@@ -371,5 +410,169 @@ module asyn_fifo #(
 
     // mode arbiter for full/empty-flags
     assign fifo_empty = |state_sr ? retrans_empty : empty_buffer2;
+
+    // Almost-Full-Flag Operation ----------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_ff @( posedge clk_wr_i or negedge reset ) begin : full_offset_selection
+      if (!reset) begin
+        full_offset <= '0;
+      end else begin
+        // offset selection
+        case ({LD_offset, FSEL_offset})
+          3'b1_00 : full_offset <= m8;
+          3'b0_01 : full_offset <= m7;
+          3'b0_10 : full_offset <= m6;
+          3'b0_00 : full_offset <= m5;
+          3'b0_11 : full_offset <= m4;
+          3'b1_01 : full_offset <= m3;
+          3'b1_10 : full_offset <= m2;
+          3'b1_11 : full_offset <= m1;
+          default: begin
+            full_offset <= '0;
+          end
+        endcase
+      end
+    end : full_offset_selection
+    //
+    always_ff @( posedge clk_wr_i or negedge reset ) begin : compare_full_offset_bound
+      if (!reset) begin
+        {almost_full_flag_buf2, almost_full_flag_buf1} <= 2'b11;
+      end else if (((data_filled_write >= FIFO_ENTRIES-full_offset) && !LD_offset) || // normal mode
+                   ((data_filled_write >= FIFO_ENTRIES-full_offset_register) && LD_offset)) begin // programmable mode
+        {almost_full_flag_buf2, almost_full_flag_buf1} <= {almost_full_flag_buf1, 1'b0};
+      end else begin
+        {almost_full_flag_buf2, almost_full_flag_buf1} <= {almost_full_flag_buf1, 1'b1};
+      end
+    end : compare_full_offset_bound
+
+    // Asyn Almost-Full-Flag Operation -----------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_comb begin : compute_asyn_full_flag
+      if (asyn_data_filled >= FIFO_ENTRIES-full_offset) begin
+        asyn_almost_full_flag = 1'b0;
+      end else begin
+        asyn_almost_full_flag = 1'b1;
+      end
+    end : compute_asyn_full_flag
+
+    // almost full flag selection
+    assign almost_full_flag_o = PFM_offset ? almost_full_flag_buf2 : asyn_almost_full_flag;
+
+    // Almost-Empty-Flag Operation ---------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_ff @( posedge clk_rd_i or negedge reset ) begin : empty_offset_selection
+      if (!reset) begin
+        empty_offset <= '0;
+      end else begin
+        // offset selection
+        case ({LD_offset, FSEL_offset})
+          3'b1_00 : empty_offset <= n8;
+          3'b0_01 : empty_offset <= n7;
+          3'b0_10 : empty_offset <= n6;
+          3'b0_00 : empty_offset <= n5;
+          3'b0_11 : empty_offset <= n4;
+          3'b1_01 : empty_offset <= n3;
+          3'b1_10 : empty_offset <= n2;
+          3'b1_11 : empty_offset <= n1;
+          default: begin
+            empty_offset <= '0;
+          end
+        endcase
+      end
+    end : empty_offset_selection
+    //
+    always_ff @( posedge clk_rd_i or negedge reset ) begin : compare_empty_offset_bound
+      if (!reset) begin
+        {almost_empty_flag_buf2, almost_empty_flag_buf1} <= 2'b00;
+      end else if (((data_filled_read <= empty_offset) && !LD_offset) || // normal mode
+                   ((data_filled_read <= empty_offset_register) && LD_offset)) begin // programmable mode
+        {almost_empty_flag_buf2, almost_empty_flag_buf1} <= {almost_empty_flag_buf1, 1'b0};
+      end else begin
+        {almost_empty_flag_buf2, almost_empty_flag_buf1} <= {almost_empty_flag_buf1, 1'b1};
+      end
+    end : compare_empty_offset_bound
+
+    // Asyn Almost-Empty-Flag Operation ----------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_comb begin : compute_asyn_empty_flag
+      if (asyn_data_filled <= empty_offset) begin
+        asyn_almost_empty_flag = 1'b0;
+      end else begin
+        asyn_almost_empty_flag = 1'b1;
+      end
+    end : compute_asyn_empty_flag
+
+    // almost full flag selection
+    assign almost_empty_flag_o = PFM_offset ? almost_empty_flag_buf2 : asyn_almost_empty_flag;
+
+    // Asyn Half-Flag Operation ------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_comb begin : comptute_half_full
+      if (asyn_data_filled >= FIFO_ENTRIES/2+1) begin
+        asyn_half_full_flag = 1'b0;
+      end else begin
+        asyn_half_full_flag = 1'b1;
+      end
+    end : comptute_half_full
+    //
+    assign half_full_o = asyn_half_full_flag;
+
+    // Programmable Flag Registers ---------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------
+    always_ff @( posedge clk_wr_i or negedge reset ) begin : programmable_offset_registers
+      if (!reset) begin
+        empty_offset_register <= '0;
+        full_offset_register  <= '0;
+        serial_load_status    <= 32'h1;
+      end else begin
+        // ========================================
+        // Serial shift into registers
+        // ========================================
+        if (LD_offset && !wr_i && !rd_i && SEN_offset) begin : serial_loading
+          if (|serial_load_status[15:00]) begin
+            empty_offset_register <= {SI_i, empty_offset_register[15:01]};
+          end
+          //
+          if (|serial_load_status[31:16]) begin
+            full_offset_register <= {SI_i, full_offset_register[15:01]};
+          end
+        // ========================================
+        // Parallel write to registers
+        // ========================================
+        end else if (LD_offset && wr_i && !rd_i && !SEN_offset) begin : parallel_write
+          // LSB --> MSB empty offset
+          if (|serial_load_status[01:00]) begin
+            empty_offset_register[08*serial_load_status[01] +: 08] <= data_in_i;
+          end
+          // LSB --> MSB full offset
+          if (|serial_load_status[03:02]) begin
+            full_offset_register[08*serial_load_status[02] +: 08] <= data_in_i;
+          end
+        end
+        //
+        serial_load_status <= serial_load_status << 1;
+      end
+    end : programmable_offset_registers
+    
+    // ========================================
+    // Parallel read to registers
+    // ========================================
+    always_ff @( posedge clk_rd_i or negedge reset ) begin
+      if (!reset) begin
+        parallel_read_offset <= '0;
+        parallel_read_status <= 4'h1;
+      end else if (LD_offset && !wr_i && rd_i && !SEN_offset) begin
+        // LSB --> MSB empty offset
+        if (|parallel_read_status[01:00]) begin
+          parallel_read_offset <= empty_offset_register[08*parallel_read_status[1] +: 08];
+        end
+        // LSB --> MSB full offset
+        if (|parallel_read_status[03:02]) begin
+          parallel_read_offset <= full_offset_register[08*parallel_read_status[3] +: 08];
+        end
+        //
+        parallel_read_status <= parallel_read_status << 1;
+      end
+    end
 
 endmodule
