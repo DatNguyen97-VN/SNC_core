@@ -47,7 +47,6 @@ module asyn_fifo #(
     input  logic                   rd_i,
     input  logic                   clk_wr_i,
     input  logic                   clk_rd_i,
-    input  logic                   daf_i,
     input  logic                   oe_i,
     input  logic                   re_trans_i,
     input  logic                   LD_i,
@@ -55,7 +54,6 @@ module asyn_fifo #(
     input  logic                   big_en_i,
     input  logic [1:0]             iw_ow_i,
     input  logic                   PFM_i,
-    input  logic                   IP_i,
     input  logic                   SEN_i,
     input  logic                   SI_i,
     output logic                   fifo_empty_o,
@@ -122,8 +120,6 @@ module asyn_fifo #(
     logic [$clog2(FIFO_ENTRIES):0] asyn_data_filled;
     logic [$clog2(FIFO_ENTRIES):0] data_filled_read;
     logic [$clog2(FIFO_ENTRIES):0] data_filled_write;
-    // interspersed parity offset
-    logic IP_offset;
     // programming mode offsets and offset registers
     logic SEN_offset;
     logic [31:00] serial_load_status;
@@ -298,7 +294,6 @@ module asyn_fifo #(
         LD_offset     <= LD_i;
         FSEL_offset   <= FSEL_i;
         SEN_offset    <= SEN_i;
-        IP_offset     <= IP_i;
       end
     end : offset_registers
 
