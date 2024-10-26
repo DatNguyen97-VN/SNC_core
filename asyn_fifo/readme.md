@@ -1,6 +1,6 @@
 # The Asynchronous FIFO Module
 ![Document](https://img.shields.io/badge/100%25-brightgreen?style=plastic&logo=readthedocs&label=Doc&labelColor=Doc) ![RTL Design](https://img.shields.io/badge/100%25-brightgreen?style=plastic&logo=codecrafters&label=RTL&labelColor=Doc
-) ![Verfication](https://img.shields.io/badge/0%25-%23e1251b?style=plastic&logo=cachet&label=Verification&labelColor=Doc)
+) ![Verfication](https://img.shields.io/badge/0%25-%23e1251b?style=plastic&logo=cachet&label=Verification&labelColor=Doc) ![Coverage](https://img.shields.io/badge/0%25-%23FF0000?style=plastic&logo=moleculer&label=Coverage)
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
    * [I/O Ports](#IO-Ports)
@@ -116,6 +116,8 @@ When empty flag goes high, retransmit setup is complete and read operations can 
 in memory. Since standard mode is selected, every word read, including the first word following retransmit
 setup, requires a high on rd_i to enable the rising edge of clk_rd_i.   
 
+![retransmit](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/retransmit_timing.png) 
+
 > [!NOTE]
 > Note: must be at least two words written to and two words read from the FIFO before a retransmit operation can be invoked. No more  > than (FIFO_ENTRIES – 2) words may be written to the FIFO between reset (master or partial) and retransmit setup. Therefore, Full-Flag is
 > high throughout the retransmit setup procedure.  
@@ -183,9 +185,13 @@ fifo_full_o goes low after FIFO_ENTRIES writes to the FIFO.
 
 fifo_full_o is synchronous and updated on the rising edge of clk_wr_i and is double register-buffered outputs.  
 
+![full flag](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/full_flag_timing.png)
+
 **empty flag**    
 When the FIFO is empty, fifo_empty_o goes low, inhibiting further read operations. When fifo_empty_o is high, the FIFO is not empty.
 It is synchronous and updated on the rising edge of clk_rd_i and is a double register-buffered output.  
+
+![empty flag](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/empty_flag_timing.png)
 
 **programmable almost-full flag**  
 if no reads are performed after reset, almost_full_flag_o goes low after (FIFO_ENTRIES – m) words are written to the
@@ -195,12 +201,16 @@ If asynchronous almost_full_flag_o configuration is selected, the almost_full_fl
 almost_full_flag_o is reset to high on the low-to-high transition of clk_rd_i. If synchronous almost_full_flag_o configuration is selected and
 is updated on the rising edge of clk_wr_i.  
 
+![paf](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/paf_timing.png)
+
 **programmable almost-empty flag**  
 It goes low when the FIFO reaches the almost-empty condition when there are n words, or fewer, in the FIFO. The offset n is the empty offset value.  
 
 If asynchronous almost-empty flag configuration is selected and is asserted low on the low-to-high transition of the read clock.
 It is reset to high on the low-to-high transition of the write clock. If synchronous
 configuration is selected and is updated on the rising edge of read clock.  
+
+![pef](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/pef_timing.png)
 
 **half-full flag**    
 The half_full_o output indicates a half-full FIFO. The rising clk_wr_i edge that fills the FIFO beyond half-full sets half_full_o low.
@@ -209,7 +219,7 @@ of the total depth of the device. The rising clk_rd_i edge that accomplishes thi
 
 if no reads are performed after reset, HF goes low after (FIFO_ENTRIES/2) + 1 writes to the FIFO.    
 
-### functional description    
+### 2.4 Functional Description    
 
 **programming flag offsets**    
 Full and empty flag offset values are user programmable. Eight default offset values are selectable during master
@@ -221,6 +231,8 @@ selects serial loading of offset values. A low on LD_i during master reset selec
 In addition to loading offset values into the FIFO, it also is possible to read the current offset values. Offset values
 can be read via the parallel output ports data_out_o, regardless of the programming mode selected (serial or
 parallel). It is not possible to read the offset values in serial fashion.  
+
+![pfm](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/programmable_offset_register.PNG)
 
 **synchronous vs asynchronous programmable-flag timing selection**  
 The FIFO can be configured during the master reset cycle with
@@ -245,6 +257,8 @@ status only after the complete set of bits for all offset registers has been ent
 reprogrammed as long as the complete set of new offset bits is entered. When LD_i is low and SEN is high, no
 serial write to the registers can occur.  
 
+![serial loading](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/serial_loading_timing.png)
+
 > [!WARNING] 
 > Write operations to the FIFO are not allowed before and during the serial programming sequence.  
 
@@ -258,6 +272,8 @@ of the empty offset register. On the third low-to-high transition of clk_wr_i, d
 offset register. On the fourth low-to-high transition of clk_wr_i, data are written into the MSB of the full offset
 register and parallel programming mode is complete.  
 
+![parallel loading](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/parallel_loading_timing.png)
+
 > [!WARNING] 
 > Write operations to the FIFO are not allowed before and during the parallel programming sequence.
 > The status of a programmable-flag output is invalid during the programming process.  
@@ -265,7 +281,9 @@ register and parallel programming mode is complete.
 Reading the offset registers employs a dedicated read offset register pointer. The contents of the offset registers
 can be read on the data_out_o pins when LD_i is set low and rd_i is set high. The total number of read operations required to read the offset
 registers is four, data are read via data_out_o from the empty offset register on the first and second low-to-high transition of
-clk_rd_i. On the third and fourth low-to-high transitions of clk_rd_i, data are read from the full offset register and is complete.  
+clk_rd_i. On the third and fourth low-to-high transitions of clk_rd_i, data are read from the full offset register and is complete.
+
+![parallel loading](https://github.com/DatNguyen97-VN/SNC_core/blob/main/asyn_fifo/doc/figures/parallel_reading_timing.png)
 
 ## 3. CDC Techniques  
 ### Double Flopping  
