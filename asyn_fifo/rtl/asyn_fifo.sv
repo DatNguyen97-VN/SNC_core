@@ -28,6 +28,7 @@
 //                  + added half full flag
 //          0.4.0   + OCt 23rd 2024
 //                  + added serial/parallel programming mode 
+//          0.4.1   + fixed a bug of execution logic for serial/parallel programming mode
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +81,6 @@ module asyn_fifo #(
     logic fifo_re;
     logic fifo_we;
     // status flag signals
-    logic fifo_full;
     logic fifo_empty;
     // buffer register
     logic empty_buffer1;
@@ -405,6 +405,8 @@ module asyn_fifo #(
 
     // mode arbiter for full/empty-flags
     assign fifo_empty = |state_sr ? retrans_empty : empty_buffer2;
+    assign fifo_empty_o = fifo_empty;
+    assign fifo_full_o = full_buffer2;
 
     // Almost-Full-Flag Operation ----------------------------------------------------------------
     // -------------------------------------------------------------------------------------------
@@ -432,8 +434,8 @@ module asyn_fifo #(
     always_ff @( posedge clk_wr_i or negedge reset ) begin : compare_full_offset_bound
       if (!reset) begin
         {almost_full_flag_buf2, almost_full_flag_buf1} <= 2'b11;
-      end else if (((data_filled_write >= FIFO_ENTRIES-full_offset) && !LD_offset) || // normal mode
-                   ((data_filled_write >= FIFO_ENTRIES-full_offset_register) && LD_offset)) begin // programmable mode
+      end else if (((data_filled_write >= FIFO_ENTRIES-full_offset) && !LD_i) || // normal mode
+                   ((data_filled_write >= FIFO_ENTRIES-full_offset_register) && LD_i)) begin // programmable mode
         {almost_full_flag_buf2, almost_full_flag_buf1} <= {almost_full_flag_buf1, 1'b0};
       end else begin
         {almost_full_flag_buf2, almost_full_flag_buf1} <= {almost_full_flag_buf1, 1'b1};
@@ -479,8 +481,8 @@ module asyn_fifo #(
     always_ff @( posedge clk_rd_i or negedge reset ) begin : compare_empty_offset_bound
       if (!reset) begin
         {almost_empty_flag_buf2, almost_empty_flag_buf1} <= 2'b00;
-      end else if (((data_filled_read <= empty_offset) && !LD_offset) || // normal mode
-                   ((data_filled_read <= empty_offset_register) && LD_offset)) begin // programmable mode
+      end else if (((data_filled_read <= empty_offset) && !LD_i) || // normal mode
+                   ((data_filled_read <= empty_offset_register) && LD_i)) begin // programmable mode
         {almost_empty_flag_buf2, almost_empty_flag_buf1} <= {almost_empty_flag_buf1, 1'b0};
       end else begin
         {almost_empty_flag_buf2, almost_empty_flag_buf1} <= {almost_empty_flag_buf1, 1'b1};
@@ -500,7 +502,7 @@ module asyn_fifo #(
     // almost full flag selection
     assign almost_empty_flag_o = PFM_offset ? almost_empty_flag_buf2 : asyn_almost_empty_flag;
 
-    // Asyn Half-Flag Operation ------------------------------------------------------------------
+    // Asyn Half-Full Flag Operation ------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------
     always_comb begin : comptute_half_full
       if (asyn_data_filled >= FIFO_ENTRIES/2+1) begin
