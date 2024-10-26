@@ -1,4 +1,6 @@
 # The Synchronous FIFO Module
+![Document](https://img.shields.io/badge/100%25-brightgreen?style=plastic&logo=readthedocs&label=Doc&labelColor=Doc) ![RTL Design](https://img.shields.io/badge/100%25-brightgreen?style=plastic&logo=codecrafters&label=RTL&labelColor=Doc
+) ![Verfication](https://img.shields.io/badge/100%25-brightgreen?style=plastic&logo=cachet&label=Verification&labelColor=Doc) ![Coverage](https://img.shields.io/badge/57%25-%23FF0000?style=plastic&logo=moleculer&label=Coverage)
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
    * [I/O Ports](#IO-Ports)
