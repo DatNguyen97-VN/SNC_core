@@ -110,6 +110,7 @@ Transition Word with `FIFO_ENTRIES` is 1024
 | W512 | W513 |  W(1024-X) | W(1025-X) | W1024 |
 ## 4. FIFO Verification  :mag_right:
 ### Testbench Architecture   
+![Testbench Architecture](https://github.com/DatNguyen97-VN/SNC_core/blob/main/syn_fifo/doc/figures/testbench_arch.png)
 ### Overall Strategy of Verification  
 Currently, the following test types are supported:  
 - [X] Register  
